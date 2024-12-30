@@ -17,7 +17,7 @@ async function bootstrap() {
 
   // Enable CORS for the application (optional)
   app.enableCors({
-    origin: 'https://kzmjeg27lig6njksus6s.lite.vusercontent.net/', // Replace with your frontend domain
+    origin: true, // Replace with your frontend domain
     methods: 'GET,POST,PUT,DELETE',
     credentials: true, // Allow cookies and credentials
   });
