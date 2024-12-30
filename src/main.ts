@@ -3,17 +3,32 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
+  // Create the NestJS application instance
   const app = await NestFactory.create(AppModule);
 
-  // Enable global validation pipe
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true, // Automatically transforms payload into DTO types
-    whitelist: true, // Strips properties that are not part of the DTO
-    forbidNonWhitelisted: true, // Throws an error if there are non-whitelisted properties
-  }));
+  // Enable global validation pipes
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true, // Automatically transform input objects to match DTO classes
+      whitelist: true, // Remove extra properties not defined in DTOs
+      forbidNonWhitelisted: true, // Throw an error for properties not allowed in DTOs
+    }),
+  );
 
+  // Enable CORS for the application (optional)
+  app.enableCors({
+    origin: 'https://kzmjeg27lig6njksus6s.lite.vusercontent.net/', // Replace with your frontend domain
+    methods: 'GET,POST,PUT,DELETE',
+    credentials: true, // Allow cookies and credentials
+  });
+
+  // Log the MongoDB connection URI (useful for debugging)
   console.log('MongoDB URI:', process.env.MONGO_URI);
-  await app.listen(process.env.PORT || 3000); // Default to port 3000 if not defined in env
+
+  // Start the application and listen on the specified port or default to 3000
+  await app.listen(process.env.PORT || 3000);
+  console.log(`Application is running on port ${process.env.PORT || 3000}`);
 }
 
+// Bootstrap the application
 bootstrap();
