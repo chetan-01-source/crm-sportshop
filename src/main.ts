@@ -26,7 +26,7 @@ async function bootstrap() {
   console.log('MongoDB URI:', process.env.MONGO_URI);
 
   // Start the application and listen on the specified port or default to 3000
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(process.env.PORT || 8080, '0.0.0.0');
   console.log(`Application is running on port ${process.env.PORT || 3000}`);
 }
 
