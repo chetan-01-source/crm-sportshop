@@ -8,6 +8,7 @@ import { OrdersModule } from './orders/orders.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MonthlyArchiveModule } from './orders/monthly-archive.module';
 import { Reflector } from '@nestjs/core';
+import { AppController } from './app.controller';
 //app module
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { Reflector } from '@nestjs/core';
     MonthlyArchiveModule,
     
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [Reflector],
 })
 export class AppModule {}
