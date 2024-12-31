@@ -9,6 +9,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { MonthlyArchiveModule } from './orders/monthly-archive.module';
 import { Reflector } from '@nestjs/core';
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
 //app module
 @Module({
   imports: [
@@ -23,6 +24,6 @@ import { AppController } from './app.controller';
     
   ],
   controllers: [AppController],
-  providers: [Reflector],
+  providers: [AppService,Reflector],
 })
 export class AppModule {}
