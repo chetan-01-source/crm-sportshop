@@ -17,6 +17,7 @@ const orders_module_1 = require("./orders/orders.module");
 const schedule_1 = require("@nestjs/schedule");
 const monthly_archive_module_1 = require("./orders/monthly-archive.module");
 const core_1 = require("@nestjs/core");
+const app_controller_1 = require("./app.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -32,7 +33,7 @@ exports.AppModule = AppModule = __decorate([
             schedule_1.ScheduleModule.forRoot(),
             monthly_archive_module_1.MonthlyArchiveModule,
         ],
-        controllers: [],
+        controllers: [app_controller_1.AppController],
         providers: [core_1.Reflector],
     })
 ], AppModule);
