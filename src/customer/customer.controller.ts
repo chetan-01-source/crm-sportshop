@@ -6,6 +6,15 @@ import { Customer } from './schema/customer.schema';
 @Controller('customers')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
+   @Get('/all')
+   async getallCustomer(){
+    return this.customerService.getall();
+   }
+   @Get(':id')
+  async getCustomer(@Param('id') id: string) {
+    console.log("ENTERED HERE");
+    return this.customerService.findById(id);
+  }
 
   // Create a new customer
   @Post()
@@ -20,11 +29,8 @@ export class CustomerController {
     return this.customerService.searchCustomerByName(name);
   }
   // Get customer by ID
-  @Get(':id')
-  async getCustomer(@Param('id') id: string) {
-    return this.customerService.findById(id);
-  }
-
+  
+  
   // Update customer
   @Put(':id')
   async update(

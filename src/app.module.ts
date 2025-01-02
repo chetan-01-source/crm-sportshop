@@ -10,6 +10,7 @@ import { MonthlyArchiveModule } from './orders/monthly-archive.module';
 import { Reflector } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { WeeklyModule } from './orders/Weekly.module';
 //app module
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { AppService } from './app.service';
     OrdersModule,
     ScheduleModule.forRoot(),
     MonthlyArchiveModule,
-    
+    WeeklyModule
   ],
   controllers: [AppController],
   providers: [AppService,Reflector],

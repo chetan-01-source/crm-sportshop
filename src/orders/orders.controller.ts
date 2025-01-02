@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query ,Logger} from '@nestjs/common';
 import { OrdersService } from './service/orders.service';
 import { CreateOrderDto } from '../orders/dto/create-order.dto';
 import { UpdateOrderDto } from '../orders/dto/update-order.dto';
@@ -6,8 +6,9 @@ import { Order } from './schemas/order.schema';
 
 @Controller('orders')
 export class OrdersController {
+   
   constructor(private readonly ordersService: OrdersService) {}
-
+  private readonly logger = new Logger('OrderService');
   @Post()
   async createOrder(@Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.createOrder(createOrderDto);
@@ -19,6 +20,7 @@ export class OrdersController {
   }
   @Get('today-stats')
   async getTodayOrderStats() {
+    console.log("CONTroller called here");
     return this.ordersService.getTodayOrderStats();
   }
   @Get('top-products')
@@ -34,7 +36,8 @@ export class OrdersController {
   async getMonthlyStats() {
     return this.ordersService.calculateMonthlyStats();
   }
-
+  
+  
   @Get(':id')
   async getOrderById(@Param('id') id: string) {
     return this.ordersService.getOrderById(id);

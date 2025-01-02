@@ -21,6 +21,7 @@ let OrdersService = class OrdersService {
         this.orderModel = orderModel;
         this.customerModel = customerModel;
         this.inventoryModel = inventoryModel;
+        this.logger = new common_1.Logger('OrderService');
     }
     async createOrder(createOrderDto) {
         const { customerId, items, totalAmount, status } = createOrderDto;
@@ -113,7 +114,13 @@ let OrdersService = class OrdersService {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
         const endOfMonth = new Date(startOfMonth);
-        endOfMonth.setMonth(startOfMonth.getMonth() + 1);
+        if (startOfMonth.getMonth() === 11) {
+            endOfMonth.setFullYear(startOfMonth.getFullYear() + 1);
+            endOfMonth.setMonth(0);
+        }
+        else {
+            endOfMonth.setMonth(startOfMonth.getMonth() + 1);
+        }
         const monthlyOrders = await this.orderModel.find({
             createdAt: { $gte: startOfMonth, $lt: endOfMonth },
             inventoryRestored: false,
@@ -183,54 +190,80 @@ let OrdersService = class OrdersService {
             },
             { $unwind: '$productDetails' },
             {
-                $project: {
-                    productId: '$_id',
-                    name: '$productDetails.name',
-                    category: '$productDetails.category',
-                    price: '$productDetails.price',
-                    totalQuantity: 1,
-                    _id: 0,
-                },
+                $replaceRoot: { newRoot: '$productDetails' },
             },
-            { $sort: { totalQuantity: -1 } },
+            {
+                $addFields: { quantity: '$totalQuantity' },
+            },
+            { $sort: { quantity: -1 } },
             { $limit: limit },
         ]);
         return topProducts;
     }
     async getTodayOrderStats() {
+        console.log("Entering getTodayOrderStats method");
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
-        const stats = await this.orderModel.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: startOfDay, $lt: endOfDay },
+        try {
+            const stats = await this.orderModel.aggregate([
+                {
+                    $match: {
+                        createdAt: { $gte: startOfDay, $lt: endOfDay },
+                    },
                 },
-            },
-            {
-                $group: {
-                    _id: '$status',
-                    count: { $sum: 1 },
+                {
+                    $group: {
+                        _id: '$status',
+                        count: { $sum: 1 },
+                    },
                 },
-            },
-        ]);
-        const summary = {
-            totalOrders: 0,
-            completed: 0,
-            cancelled: 0,
-            pending: 0,
-        };
-        stats.forEach((stat) => {
-            summary.totalOrders += stat.count;
-            if (stat._id === 'completed')
-                summary.completed = stat.count;
-            if (stat._id === 'cancelled')
-                summary.cancelled = stat.count;
-            if (stat._id === 'pending')
-                summary.pending = stat.count;
-        });
-        return summary;
+            ]);
+            console.log("Stats aggregation result:", stats);
+            const completedStats = await this.orderModel.aggregate([
+                {
+                    $match: {
+                        createdAt: { $gte: startOfDay, $lt: endOfDay },
+                        status: 'completed',
+                    },
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalAmount: { $sum: '$totalAmount' },
+                        totalMarkedPrice: { $sum: '$totalMarkedPrice' },
+                    },
+                },
+            ]);
+            console.log("Completed stats aggregation result:", completedStats);
+            const totals = completedStats[0] || { totalAmount: 0, totalMarkedPrice: 0 };
+            const revenue = totals.totalAmount - totals.totalMarkedPrice;
+            const summary = {
+                totalOrders: 0,
+                completed: 0,
+                cancelled: 0,
+                pending: 0,
+                totalAmount: totals.totalAmount,
+                totalMarkedPrice: totals.totalMarkedPrice,
+                revenue,
+            };
+            stats.forEach((stat) => {
+                summary.totalOrders += stat.count;
+                if (stat._id === 'completed')
+                    summary.completed = stat.count;
+                if (stat._id === 'cancelled')
+                    summary.cancelled = stat.count;
+                if (stat._id === 'pending')
+                    summary.pending = stat.count;
+            });
+            console.log("Final Summary Object:", summary);
+            return summary;
+        }
+        catch (error) {
+            console.error("Error in getTodayOrderStats:", error);
+            throw error;
+        }
     }
 };
 exports.OrdersService = OrdersService;

@@ -21,6 +21,13 @@ let CustomerController = class CustomerController {
     constructor(customerService) {
         this.customerService = customerService;
     }
+    async getallCustomer() {
+        return this.customerService.getall();
+    }
+    async getCustomer(id) {
+        console.log("ENTERED HERE");
+        return this.customerService.findById(id);
+    }
     async create(createCustomerDto) {
         return this.customerService.create(createCustomerDto);
     }
@@ -30,9 +37,6 @@ let CustomerController = class CustomerController {
         }
         return this.customerService.searchCustomerByName(name);
     }
-    async getCustomer(id) {
-        return this.customerService.findById(id);
-    }
     async update(id, updateCustomerDto) {
         return this.customerService.update(id, updateCustomerDto);
     }
@@ -41,6 +45,19 @@ let CustomerController = class CustomerController {
     }
 };
 exports.CustomerController = CustomerController;
+__decorate([
+    (0, common_1.Get)('/all'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], CustomerController.prototype, "getallCustomer", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CustomerController.prototype, "getCustomer", null);
 __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
@@ -55,13 +72,6 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CustomerController.prototype, "searchCustomer", null);
-__decorate([
-    (0, common_1.Get)(':id'),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], CustomerController.prototype, "getCustomer", null);
 __decorate([
     (0, common_1.Put)(':id'),
     __param(0, (0, common_1.Param)('id')),

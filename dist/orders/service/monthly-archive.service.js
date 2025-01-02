@@ -26,11 +26,23 @@ let MonthlyArchiveService = class MonthlyArchiveService {
     }
     async generateMonthlyArchive() {
         const lastMonth = new Date();
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        if (lastMonth.getMonth() === 0) {
+            lastMonth.setFullYear(lastMonth.getFullYear() - 1);
+            lastMonth.setMonth(11);
+        }
+        else {
+            lastMonth.setMonth(lastMonth.getMonth() - 1);
+        }
         lastMonth.setDate(1);
         lastMonth.setHours(0, 0, 0, 0);
         const nextMonth = new Date(lastMonth);
-        nextMonth.setMonth(lastMonth.getMonth() + 1);
+        if (lastMonth.getMonth() === 11) {
+            nextMonth.setFullYear(lastMonth.getFullYear() + 1);
+            nextMonth.setMonth(0);
+        }
+        else {
+            nextMonth.setMonth(lastMonth.getMonth() + 1);
+        }
         const month = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
         const { totalAmount, totalMarkedPrice, revenue, totalOrders, completedOrders, pendingOrders, cancelledOrders, } = await this.ordersService.calculateMonthlyStats();
         await this.addMonthlyData({

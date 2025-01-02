@@ -18,6 +18,8 @@ const schedule_1 = require("@nestjs/schedule");
 const monthly_archive_module_1 = require("./orders/monthly-archive.module");
 const core_1 = require("@nestjs/core");
 const app_controller_1 = require("./app.controller");
+const app_service_1 = require("./app.service");
+const Weekly_module_1 = require("./orders/Weekly.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -32,9 +34,10 @@ exports.AppModule = AppModule = __decorate([
             orders_module_1.OrdersModule,
             schedule_1.ScheduleModule.forRoot(),
             monthly_archive_module_1.MonthlyArchiveModule,
+            Weekly_module_1.WeeklyModule
         ],
         controllers: [app_controller_1.AppController],
-        providers: [core_1.Reflector],
+        providers: [app_service_1.AppService, core_1.Reflector],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

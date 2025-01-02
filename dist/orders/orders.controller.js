@@ -20,6 +20,7 @@ const update_order_dto_1 = require("../orders/dto/update-order.dto");
 let OrdersController = class OrdersController {
     constructor(ordersService) {
         this.ordersService = ordersService;
+        this.logger = new common_1.Logger('OrderService');
     }
     async createOrder(createOrderDto) {
         return this.ordersService.createOrder(createOrderDto);
@@ -28,6 +29,7 @@ let OrdersController = class OrdersController {
         return this.ordersService.getAllOrders();
     }
     async getTodayOrderStats() {
+        console.log("CONTroller called here");
         return this.ordersService.getTodayOrderStats();
     }
     async getMonthlyTopProducts(month, year, limit = 10) {

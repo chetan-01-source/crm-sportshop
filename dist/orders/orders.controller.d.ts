@@ -5,6 +5,7 @@ import { Order } from './schemas/order.schema';
 export declare class OrdersController {
     private readonly ordersService;
     constructor(ordersService: OrdersService);
+    private readonly logger;
     createOrder(createOrderDto: CreateOrderDto): Promise<Order>;
     getAllOrders(): Promise<Order[]>;
     getTodayOrderStats(): Promise<{
@@ -12,6 +13,9 @@ export declare class OrdersController {
         completed: number;
         cancelled: number;
         pending: number;
+        totalAmount: any;
+        totalMarkedPrice: any;
+        revenue: number;
     }>;
     getMonthlyTopProducts(month: number, year: number, limit?: number): Promise<any[]>;
     getMonthlyStats(): Promise<{

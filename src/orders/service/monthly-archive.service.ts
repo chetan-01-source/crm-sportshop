@@ -17,38 +17,54 @@ export class MonthlyArchiveService {
   @Cron('* * * * *') // Runs at midnight on the 1st of each month
   async generateMonthlyArchive() {
     const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+    // Handle January case (month 0-based: 0 is January)
+    if (lastMonth.getMonth() === 0) {
+        lastMonth.setFullYear(lastMonth.getFullYear() - 1); // Go to previous year
+        lastMonth.setMonth(11); // Set to December
+    } else {
+        lastMonth.setMonth(lastMonth.getMonth() - 1); // Decrement the month
+    }
+
     lastMonth.setDate(1);
     lastMonth.setHours(0, 0, 0, 0);
 
     const nextMonth = new Date(lastMonth);
-    nextMonth.setMonth(lastMonth.getMonth() + 1);
+
+    // Handle December case (month 0-based: 11 is December)
+    if (lastMonth.getMonth() === 11) {
+        nextMonth.setFullYear(lastMonth.getFullYear() + 1); // Go to next year
+        nextMonth.setMonth(0); // Set to January
+    } else {
+        nextMonth.setMonth(lastMonth.getMonth() + 1); // Increment the month
+    }
 
     const month = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
 
     // Calculate the monthly stats from OrdersService
     const {
-      totalAmount,
-      totalMarkedPrice,
-      revenue,
-      totalOrders,
-      completedOrders,
-      pendingOrders,
-      cancelledOrders,
+        totalAmount,
+        totalMarkedPrice,
+        revenue,
+        totalOrders,
+        completedOrders,
+        pendingOrders,
+        cancelledOrders,
     } = await this.ordersService.calculateMonthlyStats();
 
     // Archive the data
     await this.addMonthlyData({
-      month,
-      totalAmount,
-      totalMarkedPrice,
-      revenue,
-      totalOrders,
-      completedOrders,
-      pendingOrders,
-      cancelledOrders,
+        month,
+        totalAmount,
+        totalMarkedPrice,
+        revenue,
+        totalOrders,
+        completedOrders,
+        pendingOrders,
+        cancelledOrders,
     });
-  }
+}
+
 
   async addMonthlyData(data: {
     month: string;

@@ -20,6 +20,10 @@ let CustomerService = class CustomerService {
     constructor(customerModel) {
         this.customerModel = customerModel;
     }
+    async getall() {
+        const customers = await this.customerModel.find().exec();
+        return customers;
+    }
     async create(createCustomerDto) {
         const createdCustomer = new this.customerModel(createCustomerDto);
         return createdCustomer.save();

@@ -8,6 +8,7 @@ export declare class OrdersService {
     private readonly orderModel;
     private readonly customerModel;
     private readonly inventoryModel;
+    private readonly logger;
     constructor(orderModel: Model<Order>, customerModel: Model<Customer>, inventoryModel: Model<Inventory>);
     createOrder(createOrderDto: CreateOrderDto): Promise<Order>;
     getAllOrders(): Promise<Order[]>;
@@ -26,11 +27,14 @@ export declare class OrdersService {
         pendingOrders: number;
         cancelledOrders: number;
     }>;
-    getMonthlyTopProducts(month: number, year: number, limit?: number): Promise<any[]>;
+    getMonthlyTopProducts(month: any, year: any, limit?: number): Promise<any[]>;
     getTodayOrderStats(): Promise<{
         totalOrders: number;
         completed: number;
         cancelled: number;
         pending: number;
+        totalAmount: any;
+        totalMarkedPrice: any;
+        revenue: number;
     }>;
 }

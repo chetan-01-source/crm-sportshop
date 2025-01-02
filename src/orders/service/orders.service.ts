@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException,Logger} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Order } from '../schemas/order.schema';
@@ -9,6 +9,8 @@ import { Inventory } from 'src/inventory/schema/inventory.schema';
 
 @Injectable()
 export class OrdersService {
+
+  private readonly logger = new Logger('OrderService');
   constructor(
     @InjectModel('Order') private readonly orderModel: Model<Order>, 
     @InjectModel('Customer') private readonly customerModel: Model<Customer>, 
@@ -160,152 +162,196 @@ export class OrdersService {
     cancelledOrders: number;
   }> {
     const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-  
+    startOfMonth.setDate(1); // Set to the 1st of the current month
+    startOfMonth.setHours(0, 0, 0, 0); // Reset time to the start of the day
+
+    // Handle month transition for endOfMonth
     const endOfMonth = new Date(startOfMonth);
-    endOfMonth.setMonth(startOfMonth.getMonth() + 1);
-  
+    if (startOfMonth.getMonth() === 11) { // December
+        endOfMonth.setFullYear(startOfMonth.getFullYear() + 1); // Increment year
+        endOfMonth.setMonth(0); // Set to January
+    } else {
+        endOfMonth.setMonth(startOfMonth.getMonth() + 1); // Increment month
+    }
+
     // Fetch only orders where inventoryRestored is false
     const monthlyOrders = await this.orderModel.find({
-      createdAt: { $gte: startOfMonth, $lt: endOfMonth },
-      inventoryRestored: false, // Exclude canceled orders affecting inventory
+        createdAt: { $gte: startOfMonth, $lt: endOfMonth },
+        inventoryRestored: false, // Exclude canceled orders affecting inventory
     });
-  
+
     // Calculate the totals
     const totalAmount = monthlyOrders.reduce((sum, order) => sum + order.totalAmount, 0);
     const totalMarkedPrice = monthlyOrders.reduce(
-      (sum, order) => sum + order.totalMarkedPrice,
-      0,
+        (sum, order) => sum + order.totalMarkedPrice,
+        0,
     );
     const revenue = totalAmount - totalMarkedPrice;
-  
+
     // Fetch counts grouped by status
     const statusCounts = await this.orderModel.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: startOfMonth, $lt: endOfMonth },
+        {
+            $match: {
+                createdAt: { $gte: startOfMonth, $lt: endOfMonth },
+            },
         },
-      },
-      {
-        $group: {
-          _id: '$status', // Group by status
-          count: { $sum: 1 }, // Count orders per status
+        {
+            $group: {
+                _id: '$status', // Group by status
+                count: { $sum: 1 }, // Count orders per status
+            },
         },
-      },
     ]);
-  
+
     // Initialize default counts
     let completedOrders = 0;
     let pendingOrders = 0;
     let cancelledOrders = 0;
-  
+
     // Map counts to the correct variables
     statusCounts.forEach((stat) => {
-      if (stat._id === 'completed') completedOrders = stat.count;
-      if (stat._id === 'pending') pendingOrders = stat.count;
-      if (stat._id === 'cancelled') cancelledOrders = stat.count;
+        if (stat._id === 'completed') completedOrders = stat.count;
+        if (stat._id === 'pending') pendingOrders = stat.count;
+        if (stat._id === 'cancelled') cancelledOrders = stat.count;
     });
-  
+
     const totalOrders = completedOrders + pendingOrders + cancelledOrders;
-  
+
     return {
-      totalAmount,
-      totalMarkedPrice,
-      revenue,
-      totalOrders,
-      completedOrders,
-      pendingOrders,
-      cancelledOrders,
+        totalAmount,
+        totalMarkedPrice,
+        revenue,
+        totalOrders,
+        completedOrders,
+        pendingOrders,
+        cancelledOrders,
     };
-  }
-  
+}
 
 
-  async getMonthlyTopProducts(month: number, year: number, limit: number = 10) {
+
+  async getMonthlyTopProducts(month, year, limit = 10) {
     const startOfMonth = new Date(year, month - 1, 1);
     const endOfMonth = new Date(year, month, 1);
 
     const topProducts = await this.orderModel.aggregate([
-      {
-        $match: {
-          orderDate: { $gte: startOfMonth, $lt: endOfMonth },
-          status: 'completed', // Only consider completed orders
+        {
+            $match: {
+                orderDate: { $gte: startOfMonth, $lt: endOfMonth },
+                status: 'completed', // Only consider completed orders
+            },
         },
-      },
-      { $unwind: '$items' }, // Break down items array
-      {
-        $group: {
-          _id: '$items.item', // Group by product ID
-          totalQuantity: { $sum: '$items.quantity' }, // Sum quantities
+        { $unwind: '$items' }, // Break down items array
+        {
+            $group: {
+                _id: '$items.item', // Group by product ID
+                totalQuantity: { $sum: '$items.quantity' }, // Sum quantities
+            },
         },
-      },
-      {
-        $lookup: {
-          from: 'inventories', // Join Inventory collection
-          localField: '_id',
-          foreignField: '_id',
-          as: 'productDetails',
+        {
+            $lookup: {
+                from: 'inventories', // Join Inventory collection
+                localField: '_id',
+                foreignField: '_id',
+                as: 'productDetails',
+            },
         },
-      },
-      { $unwind: '$productDetails' }, // Deconstruct product details
-      {
-        $project: {
-          productId: '$_id',
-          name: '$productDetails.name',
-          category: '$productDetails.category',
-          price: '$productDetails.price',
-          totalQuantity: 1,
-          _id: 0,
+        { $unwind: '$productDetails' }, // Deconstruct product details
+        {
+            $replaceRoot: { newRoot: '$productDetails' }, // Replace root with product details
         },
-      },
-      { $sort: { totalQuantity: -1 } }, // Sort by quantity sold
-      { $limit: limit }, // Limit results
+        {
+            $addFields: { quantity: '$totalQuantity' }, // Add totalQuantity to product
+        },
+        { $sort: { quantity: -1 } }, // Sort by quantity sold
+        { $limit: limit }, // Limit results
     ]);
 
     return topProducts;
-  }
+}
 
 
   //calculating orders pending ,completed,cancelled on daily basis 
   async getTodayOrderStats() {
+    console.log("Entering getTodayOrderStats method");
+
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    const stats = await this.orderModel.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: startOfDay, $lt: endOfDay },
-        },
-      },
-      {
-        $group: {
-          _id: '$status', // Group by order status
-          count: { $sum: 1 }, // Count orders in each group
-        },
-      },
-    ]);
+    try {
+        // Aggregation to get order counts grouped by status
+        const stats = await this.orderModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startOfDay, $lt: endOfDay },
+                },
+            },
+            {
+                $group: {
+                    _id: '$status', // Group by order status
+                    count: { $sum: 1 }, // Count orders
+                },
+            },
+        ]);
 
-    // Format the results into a summary object
-    const summary = {
-      totalOrders: 0,
-      completed: 0,
-      cancelled: 0,
-      pending: 0,
-    };
+        console.log("Stats aggregation result:", stats);
 
-    stats.forEach((stat) => {
-      summary.totalOrders += stat.count; // Update total order count
-      if (stat._id === 'completed') summary.completed = stat.count;
-      if (stat._id === 'cancelled') summary.cancelled = stat.count;
-      if (stat._id === 'pending') summary.pending = stat.count;
-    });
+        // Aggregation to calculate totals for completed orders
+        const completedStats = await this.orderModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: startOfDay, $lt: endOfDay },
+                    status: 'completed',
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalAmount: { $sum: '$totalAmount' },
+                    totalMarkedPrice: { $sum: '$totalMarkedPrice' },
+                },
+            },
+        ]);
 
-    return summary;
-  }
+        console.log("Completed stats aggregation result:", completedStats);
+
+        // Extract totals or default to 0 if no completed orders exist
+        const totals = completedStats[0] || { totalAmount: 0, totalMarkedPrice: 0 };
+        const revenue = totals.totalAmount - totals.totalMarkedPrice;
+
+        // Format the results into a summary object
+        const summary = {
+            totalOrders: 0,
+            completed: 0,
+            cancelled: 0,
+            pending: 0,
+            totalAmount: totals.totalAmount,
+            totalMarkedPrice: totals.totalMarkedPrice,
+            revenue,
+        };
+
+        // Map the counts to the summary
+        stats.forEach((stat) => {
+            summary.totalOrders += stat.count; // Update total order count
+            if (stat._id === 'completed') summary.completed = stat.count;
+            if (stat._id === 'cancelled') summary.cancelled = stat.count;
+            if (stat._id === 'pending') summary.pending = stat.count;
+        });
+
+        console.log("Final Summary Object:", summary);
+        return summary;
+
+    } catch (error) {
+        console.error("Error in getTodayOrderStats:", error);
+        throw error;
+    }
+}
+
+
+
 }
   
 

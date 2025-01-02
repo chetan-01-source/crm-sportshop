@@ -8,7 +8,12 @@ import { Customer } from './schema/customer.schema';
 @Injectable()
 export class CustomerService {
   constructor(@InjectModel('Customer') private readonly customerModel: Model<Customer>) {}
+  // Get all customers
 
+  async getall(){
+    const customers = await this.customerModel.find().exec();
+    return customers;
+  }
   // Create a new customer
   async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
     const createdCustomer = new this.customerModel(createCustomerDto);
