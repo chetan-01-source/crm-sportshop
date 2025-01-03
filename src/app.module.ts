@@ -11,6 +11,8 @@ import { Reflector } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { WeeklyModule } from './orders/Weekly.module';
+
+
 //app module
 @Module({
   imports: [
@@ -22,7 +24,8 @@ import { WeeklyModule } from './orders/Weekly.module';
     OrdersModule,
     ScheduleModule.forRoot(),
     MonthlyArchiveModule,
-    WeeklyModule
+    WeeklyModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService,Reflector],

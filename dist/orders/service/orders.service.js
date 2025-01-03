@@ -190,10 +190,14 @@ let OrdersService = class OrdersService {
             },
             { $unwind: '$productDetails' },
             {
-                $replaceRoot: { newRoot: '$productDetails' },
-            },
-            {
-                $addFields: { quantity: '$totalQuantity' },
+                $project: {
+                    _id: 0,
+                    productId: '$_id',
+                    name: '$productDetails.name',
+                    price: '$productDetails.price',
+                    category: '$productDetails.category',
+                    quantity: '$totalQuantity',
+                },
             },
             { $sort: { quantity: -1 } },
             { $limit: limit },

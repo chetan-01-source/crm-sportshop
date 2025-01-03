@@ -10,6 +10,13 @@ export class CustomerController {
    async getallCustomer(){
     return this.customerService.getall();
    }
+   @Get('/search')
+  async searchCustomer(@Query('name') name: string): Promise<Customer[]> {
+    if (!name) {
+      throw new BadRequestException('Name query parameter is required');
+    }
+    return this.customerService.searchCustomerByName(name);
+  }
    @Get(':id')
   async getCustomer(@Param('id') id: string) {
     console.log("ENTERED HERE");
@@ -21,13 +28,7 @@ export class CustomerController {
   async create(@Body() createCustomerDto: CreateCustomerDto) {
     return this.customerService.create(createCustomerDto);
   }
-  @Get('/search')
-  async searchCustomer(@Query('name') name: string): Promise<Customer[]> {
-    if (!name) {
-      throw new BadRequestException('Name query parameter is required');
-    }
-    return this.customerService.searchCustomerByName(name);
-  }
+  
   // Get customer by ID
   
   

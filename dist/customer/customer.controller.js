@@ -24,18 +24,18 @@ let CustomerController = class CustomerController {
     async getallCustomer() {
         return this.customerService.getall();
     }
+    async searchCustomer(name) {
+        if (!name) {
+            throw new common_1.BadRequestException('Name query parameter is required');
+        }
+        return this.customerService.searchCustomerByName(name);
+    }
     async getCustomer(id) {
         console.log("ENTERED HERE");
         return this.customerService.findById(id);
     }
     async create(createCustomerDto) {
         return this.customerService.create(createCustomerDto);
-    }
-    async searchCustomer(name) {
-        if (!name) {
-            throw new common_1.BadRequestException('Name query parameter is required');
-        }
-        return this.customerService.searchCustomerByName(name);
     }
     async update(id, updateCustomerDto) {
         return this.customerService.update(id, updateCustomerDto);
@@ -52,6 +52,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CustomerController.prototype, "getallCustomer", null);
 __decorate([
+    (0, common_1.Get)('/search'),
+    __param(0, (0, common_1.Query)('name')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CustomerController.prototype, "searchCustomer", null);
+__decorate([
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -65,13 +72,6 @@ __decorate([
     __metadata("design:paramtypes", [create_customer_dto_1.CreateCustomerDto]),
     __metadata("design:returntype", Promise)
 ], CustomerController.prototype, "create", null);
-__decorate([
-    (0, common_1.Get)('/search'),
-    __param(0, (0, common_1.Query)('name')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], CustomerController.prototype, "searchCustomer", null);
 __decorate([
     (0, common_1.Put)(':id'),
     __param(0, (0, common_1.Param)('id')),

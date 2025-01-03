@@ -229,46 +229,50 @@ export class OrdersService {
 }
 
 
+async getMonthlyTopProducts(month, year, limit = 10) {
+  const startOfMonth = new Date(year, month - 1, 1);
+  const endOfMonth = new Date(year, month, 1);
 
-  async getMonthlyTopProducts(month, year, limit = 10) {
-    const startOfMonth = new Date(year, month - 1, 1);
-    const endOfMonth = new Date(year, month, 1);
+  const topProducts = await this.orderModel.aggregate([
+      {
+          $match: {
+              orderDate: { $gte: startOfMonth, $lt: endOfMonth },
+              status: 'completed', // Only consider completed orders
+          },
+      },
+      { $unwind: '$items' }, // Break down items array
+      {
+          $group: {
+              _id: '$items.item', // Group by product ID
+              totalQuantity: { $sum: '$items.quantity' }, // Sum quantities
+          },
+      },
+      {
+          $lookup: {
+              from: 'inventories', // Join Inventory collection
+              localField: '_id',
+              foreignField: '_id',
+              as: 'productDetails',
+          },
+      },
+      { $unwind: '$productDetails' }, // Deconstruct product details
+      {
+          $project: {
+              _id: 0, // Exclude the _id from the final output
+              productId: '$_id', // Include product ID
+              name: '$productDetails.name', // Include product name
+              price: '$productDetails.price',
+              category: '$productDetails.category', // Include product price
+              quantity: '$totalQuantity', // Include total quantity sold
+          },
+      },
+      { $sort: { quantity: -1 } }, // Sort by quantity sold
+      { $limit: limit }, // Limit results
+  ]);
 
-    const topProducts = await this.orderModel.aggregate([
-        {
-            $match: {
-                orderDate: { $gte: startOfMonth, $lt: endOfMonth },
-                status: 'completed', // Only consider completed orders
-            },
-        },
-        { $unwind: '$items' }, // Break down items array
-        {
-            $group: {
-                _id: '$items.item', // Group by product ID
-                totalQuantity: { $sum: '$items.quantity' }, // Sum quantities
-            },
-        },
-        {
-            $lookup: {
-                from: 'inventories', // Join Inventory collection
-                localField: '_id',
-                foreignField: '_id',
-                as: 'productDetails',
-            },
-        },
-        { $unwind: '$productDetails' }, // Deconstruct product details
-        {
-            $replaceRoot: { newRoot: '$productDetails' }, // Replace root with product details
-        },
-        {
-            $addFields: { quantity: '$totalQuantity' }, // Add totalQuantity to product
-        },
-        { $sort: { quantity: -1 } }, // Sort by quantity sold
-        { $limit: limit }, // Limit results
-    ]);
-
-    return topProducts;
+  return topProducts;
 }
+
 
 
   //calculating orders pending ,completed,cancelled on daily basis 

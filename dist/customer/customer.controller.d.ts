@@ -10,9 +10,9 @@ export declare class CustomerController {
     }> & {
         __v: number;
     })[]>;
+    searchCustomer(name: string): Promise<Customer[]>;
     getCustomer(id: string): Promise<Customer>;
     create(createCustomerDto: CreateCustomerDto): Promise<Customer>;
-    searchCustomer(name: string): Promise<Customer[]>;
     update(id: string, updateCustomerDto: UpdateCustomerDto): Promise<Customer>;
     delete(id: string): Promise<Customer>;
 }
