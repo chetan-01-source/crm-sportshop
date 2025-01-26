@@ -7,6 +7,7 @@ exports.InventorySchema = new mongoose_1.Schema({
     category: { type: String, required: true },
     price: { type: Number, required: true },
     quantity: { type: Number, required: true },
+    qrCode: { type: Buffer, required: false },
     lowStockThreshold: { type: Number, default: 5 },
 }, {
     timestamps: true,

@@ -6,19 +6,22 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PredictionModule = void 0;
+exports.QrCodeModule = void 0;
 const common_1 = require("@nestjs/common");
-const axios_1 = require("@nestjs/axios");
-const prediction_controller_1 = require("./prediction.controller");
-const prediction_service_1 = require("./service/prediction.service");
-let PredictionModule = class PredictionModule {
+const mongoose_1 = require("@nestjs/mongoose");
+const qr_code_controller_1 = require("./qr-code.controller");
+const qr_code_service_1 = require("./qr-code.service");
+const inventory_schema_1 = require("./schema/inventory.schema");
+let QrCodeModule = class QrCodeModule {
 };
-exports.PredictionModule = PredictionModule;
-exports.PredictionModule = PredictionModule = __decorate([
+exports.QrCodeModule = QrCodeModule;
+exports.QrCodeModule = QrCodeModule = __decorate([
     (0, common_1.Module)({
-        imports: [axios_1.HttpModule],
-        controllers: [prediction_controller_1.PredictionController],
-        providers: [prediction_service_1.PredictionService],
+        imports: [
+            mongoose_1.MongooseModule.forFeature([{ name: 'Inventory', schema: inventory_schema_1.InventorySchema }]),
+        ],
+        controllers: [qr_code_controller_1.QrCodeController],
+        providers: [qr_code_service_1.QrCodeService],
     })
-], PredictionModule);
-//# sourceMappingURL=prediction.module.js.map
+], QrCodeModule);
+//# sourceMappingURL=qr-code.module.js.map

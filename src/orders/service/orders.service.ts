@@ -21,15 +21,15 @@ export class OrdersService {
   async createOrder(createOrderDto: CreateOrderDto): Promise<Order> {
     const { customerId, items, totalAmount, status } = createOrderDto;
 
-    // Fetch the customer to check if they exist
+
     const customer = await this.customerModel.findById(customerId);
     if (!customer) {
       throw new NotFoundException('Customer not found');
     }
 
-    let totalMarkedPrice = 0; // Initialize the total marked price
+    let totalMarkedPrice = 0; 
 
-    // Process the items, calculate the total marked price, and update the inventory
+ 
     const processedItems = await Promise.all(
       items.map(async ({ itemId, quantity }) => {
         const inventoryItem = await this.inventoryModel.findById(itemId);
@@ -37,36 +37,34 @@ export class OrdersService {
           throw new NotFoundException(`Item with ID ${itemId} not found`);
         }
 
-        // Check for sufficient stock
         if (inventoryItem.quantity < quantity) {
           throw new BadRequestException(
             `Insufficient stock for item: ${inventoryItem.name} (ID: ${itemId})`,
           );
         }
 
-        // Deduct the quantity from the inventory
+        
         inventoryItem.quantity -= quantity;
         await inventoryItem.save();
 
-        // Calculate the total marked price for this item and add it to the total
+     
         totalMarkedPrice += inventoryItem.price * quantity;
 
-        return { item: inventoryItem._id, quantity }; // Return processed item
+        return { item: inventoryItem._id, quantity };
       }),
     );
 
-    // Create a new order with the calculated total marked price
+
     const newOrder = new this.orderModel({
       customer: customer._id,
       items: processedItems,
       totalAmount,
-      totalMarkedPrice, // Store the total marked price
+      totalMarkedPrice,
       status: status || 'pending',
     });
 
     const savedOrder = await newOrder.save();
 
-    // Link the order to the customer
     customer.orders.push(savedOrder.id);
     await customer.save();
   
@@ -151,7 +149,7 @@ export class OrdersService {
     return order.save();
   }
 
-  // New method to calculate total amount and total marked price for monthly orders
+ 
   async calculateMonthlyStats(): Promise<{
     totalAmount: number;
     totalMarkedPrice: number;
@@ -162,25 +160,24 @@ export class OrdersService {
     cancelledOrders: number;
   }> {
     const startOfMonth = new Date();
-    startOfMonth.setDate(1); // Set to the 1st of the current month
-    startOfMonth.setHours(0, 0, 0, 0); // Reset time to the start of the day
+    startOfMonth.setDate(1); 
+    startOfMonth.setHours(0, 0, 0, 0); 
 
-    // Handle month transition for endOfMonth
+ 
     const endOfMonth = new Date(startOfMonth);
-    if (startOfMonth.getMonth() === 11) { // December
-        endOfMonth.setFullYear(startOfMonth.getFullYear() + 1); // Increment year
-        endOfMonth.setMonth(0); // Set to January
+    if (startOfMonth.getMonth() === 11) { 
+        endOfMonth.setFullYear(startOfMonth.getFullYear() + 1);
+        endOfMonth.setMonth(0);
     } else {
-        endOfMonth.setMonth(startOfMonth.getMonth() + 1); // Increment month
+        endOfMonth.setMonth(startOfMonth.getMonth() + 1); 
     }
 
-    // Fetch only orders where inventoryRestored is false
     const monthlyOrders = await this.orderModel.find({
         createdAt: { $gte: startOfMonth, $lt: endOfMonth },
-        inventoryRestored: false, // Exclude canceled orders affecting inventory
+        inventoryRestored: false, 
     });
 
-    // Calculate the totals
+  
     const totalAmount = monthlyOrders.reduce((sum, order) => sum + order.totalAmount, 0);
     const totalMarkedPrice = monthlyOrders.reduce(
         (sum, order) => sum + order.totalMarkedPrice,
@@ -188,7 +185,7 @@ export class OrdersService {
     );
     const revenue = totalAmount - totalMarkedPrice;
 
-    // Fetch counts grouped by status
+ 
     const statusCounts = await this.orderModel.aggregate([
         {
             $match: {
@@ -197,18 +194,18 @@ export class OrdersService {
         },
         {
             $group: {
-                _id: '$status', // Group by status
-                count: { $sum: 1 }, // Count orders per status
+                _id: '$status', 
+                count: { $sum: 1 }, 
             },
         },
     ]);
 
-    // Initialize default counts
+    
     let completedOrders = 0;
     let pendingOrders = 0;
     let cancelledOrders = 0;
 
-    // Map counts to the correct variables
+    
     statusCounts.forEach((stat) => {
         if (stat._id === 'completed') completedOrders = stat.count;
         if (stat._id === 'pending') pendingOrders = stat.count;
@@ -237,37 +234,37 @@ async getMonthlyTopProducts(month, year, limit = 10) {
       {
           $match: {
               orderDate: { $gte: startOfMonth, $lt: endOfMonth },
-              status: 'completed', // Only consider completed orders
+              status: 'completed', 
           },
       },
-      { $unwind: '$items' }, // Break down items array
+      { $unwind: '$items' }, 
       {
           $group: {
-              _id: '$items.item', // Group by product ID
-              totalQuantity: { $sum: '$items.quantity' }, // Sum quantities
+              _id: '$items.item', 
+              totalQuantity: { $sum: '$items.quantity' }, 
           },
       },
       {
           $lookup: {
-              from: 'inventories', // Join Inventory collection
+              from: 'inventories',
               localField: '_id',
               foreignField: '_id',
               as: 'productDetails',
           },
       },
-      { $unwind: '$productDetails' }, // Deconstruct product details
+      { $unwind: '$productDetails' }, 
       {
           $project: {
-              _id: 0, // Exclude the _id from the final output
-              productId: '$_id', // Include product ID
-              name: '$productDetails.name', // Include product name
+              _id: 0, 
+              productId: '$_id', 
+              name: '$productDetails.name', 
               price: '$productDetails.price',
-              category: '$productDetails.category', // Include product price
-              quantity: '$totalQuantity', // Include total quantity sold
+              category: '$productDetails.category', 
+              quantity: '$totalQuantity',
           },
       },
-      { $sort: { quantity: -1 } }, // Sort by quantity sold
-      { $limit: limit }, // Limit results
+      { $sort: { quantity: -1 } }, 
+      { $limit: limit }, 
   ]);
 
   return topProducts;
@@ -275,7 +272,7 @@ async getMonthlyTopProducts(month, year, limit = 10) {
 
 
 
-  //calculating orders pending ,completed,cancelled on daily basis 
+
   async getTodayOrderStats() {
     console.log("Entering getTodayOrderStats method");
 
@@ -286,7 +283,7 @@ async getMonthlyTopProducts(month, year, limit = 10) {
     endOfDay.setHours(23, 59, 59, 999);
 
     try {
-        // Aggregation to get order counts grouped by status
+       
         const stats = await this.orderModel.aggregate([
             {
                 $match: {
@@ -295,15 +292,15 @@ async getMonthlyTopProducts(month, year, limit = 10) {
             },
             {
                 $group: {
-                    _id: '$status', // Group by order status
-                    count: { $sum: 1 }, // Count orders
+                    _id: '$status', 
+                    count: { $sum: 1 }, 
                 },
             },
         ]);
 
         console.log("Stats aggregation result:", stats);
 
-        // Aggregation to calculate totals for completed orders
+        
         const completedStats = await this.orderModel.aggregate([
             {
                 $match: {
@@ -322,11 +319,11 @@ async getMonthlyTopProducts(month, year, limit = 10) {
 
         console.log("Completed stats aggregation result:", completedStats);
 
-        // Extract totals or default to 0 if no completed orders exist
+       
         const totals = completedStats[0] || { totalAmount: 0, totalMarkedPrice: 0 };
         const revenue = totals.totalAmount - totals.totalMarkedPrice;
 
-        // Format the results into a summary object
+
         const summary = {
             totalOrders: 0,
             completed: 0,
@@ -337,9 +334,8 @@ async getMonthlyTopProducts(month, year, limit = 10) {
             revenue,
         };
 
-        // Map the counts to the summary
         stats.forEach((stat) => {
-            summary.totalOrders += stat.count; // Update total order count
+            summary.totalOrders += stat.count;
             if (stat._id === 'completed') summary.completed = stat.count;
             if (stat._id === 'cancelled') summary.cancelled = stat.count;
             if (stat._id === 'pending') summary.pending = stat.count;

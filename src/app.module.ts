@@ -11,6 +11,7 @@ import { Reflector } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { WeeklyModule } from './orders/Weekly.module';
+import { QrCodeModule } from './inventory/qr-code.module';
 
 
 //app module
@@ -25,6 +26,7 @@ import { WeeklyModule } from './orders/Weekly.module';
     ScheduleModule.forRoot(),
     MonthlyArchiveModule,
     WeeklyModule,
+    QrCodeModule,
     
   ],
   controllers: [AppController],
